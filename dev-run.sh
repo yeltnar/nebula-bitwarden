@@ -7,4 +7,4 @@ docker run -it \
 -v$PWD/server:/app/server \
 -v$PWD/src:/app/src \
 -v$PWD/package.json:/app/package.json \
-$tag
+$tag node src/app.js "$1"
