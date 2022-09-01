@@ -1,10 +1,13 @@
 const axios = require('axios');
 const { execFile } = require('node:child_process');
+const fs = require('fs/promises');
 
 const action = process.argv[2];
 
 // don't need to change this, cuz it will be in the container 
 const server_base_url = `http://localhost:8087`;
+
+const nebula_dir = "/nebula";
 
 (async()=>{
 
@@ -19,9 +22,12 @@ const server_base_url = `http://localhost:8087`;
 
     if( action === "create_note" ){
         console.log('create_note')
-    }else if( action === "createItem" ){
-        const item = await createItem();
-        console.log(item);
+    }else if( action === "createNebulaNote" ){
+
+        const file_list = await getNebulaLocalFiles(nebula_dir);
+
+        const item = await createNebulaNote(file_list);
+        // console.log(item);
     }
 
     // const obj = await listObjects();  
@@ -30,7 +36,29 @@ const server_base_url = `http://localhost:8087`;
     process.exit();
 })();
 
-async function createItem(){
+// get the nebula files, but not folders
+async function getNebulaLocalFiles(nebula_dir){
+
+    let file_list = await Promise.all((await fs.readdir(nebula_dir)).map(async(cur)=>{
+        const file_path = `${nebula_dir}/${cur}`;
+        const is_file = (await fs.lstat(file_path)).isFile();
+
+        if(is_file){
+            const contents = (await fs.readFile(file_path)).toString();
+            return {
+                contents,
+                name:cur
+            }
+        }
+    }));
+
+    file_list = file_list.filter((cur,i,arr)=>cur!==undefined);
+
+    return file_list;
+}
+
+async function createNebulaNote(file_list){
+
     const x = await axios.post(
         server_base_url + '/object/item',
         {
@@ -39,7 +67,7 @@ async function createItem(){
             // "folderId": "1f8c544a-a33b-46d9-af7c-ae2800f4a9c8",
             "type": 2,
             "name": "Steps to World Domination",
-            "notes": "1) Use Bitwarden, 2) Profit",
+            "notes": JSON.stringify(file_list),
             "favorite": false,
             "fields": [],
             "secureNote": {
