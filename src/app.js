@@ -8,6 +8,8 @@ const action = process.argv[2];
 const server_base_url = `http://localhost:8087`;
 
 const nebula_dir = "/nebula";
+const id_note_location = "/app/config/nebula_id";
+const file_out_dir = "/app/config/";
 
 (async()=>{
 
@@ -27,7 +29,19 @@ const nebula_dir = "/nebula";
         const file_list = await getNebulaLocalFiles(nebula_dir);
 
         const item = await createNebulaNote(file_list);
-        // console.log(item);
+        const id = item.data.id;
+
+        await fs.writeFile(id_note_location,id);
+    }else if( action === 'writeNebulaNoteToFs' ){
+        const note_id = (await fs.readFile(id_note_location)).toString();
+        console.log(note_id);
+        const note_obj = (await getNebulaNote(note_id)).data;
+        const nebula_info = JSON.parse(note_obj.notes);
+
+        await Promise.all(nebula_info.map(async(cur)=>{
+            console.log(cur.name);
+            await fs.writeFile(`${file_out_dir}${cur.name}`, cur.contents)
+        }));
     }
 
     // const obj = await listObjects();  
@@ -57,6 +71,24 @@ async function getNebulaLocalFiles(nebula_dir){
     return file_list;
 }
 
+// get the note by id
+async function getNebulaNote(id){
+    const x = await axios.get(
+        server_base_url + `/object/item/${id}`
+    )
+    .catch((e)=>{
+        console.log('axios err');
+        console.log(e);
+        console.log(Object.keys(e.response));
+        console.log(e.response.data);
+        throw new Error('axios error')
+    })
+    .then((x)=>{
+        return x;
+    });
+    return x.data;
+}
+
 async function createNebulaNote(file_list){
 
     const x = await axios.post(
@@ -66,7 +98,7 @@ async function createNebulaNote(file_list){
             "collectionId": null,
             // "folderId": "1f8c544a-a33b-46d9-af7c-ae2800f4a9c8",
             "type": 2,
-            "name": "Steps to World Domination",
+            "name": "Nebula device info",
             "notes": JSON.stringify(file_list),
             "favorite": false,
             "fields": [],
