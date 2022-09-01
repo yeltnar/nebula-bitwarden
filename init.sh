@@ -4,10 +4,10 @@
 
 # exit
 
-bw config server $(cat /app/server)
+bw config server $(cat /app/config/server)
 
-email=$(cat /app/email)
-passwordfile=/app/password
+email=$(cat /app/config/email)
+passwordfile=/app/config/password
 
 bw login $email --passwordfile "$passwordfile" --raw > /tmp/session_id
 
