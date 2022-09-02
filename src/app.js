@@ -24,6 +24,11 @@ const file_out_dir = "/app/config/";
 
     if( action === "create_note" ){
         console.log('create_note')
+    }else if( action === "getNebulaNote" ){
+        const note_id = (await fs.readFile(id_note_location)).toString();
+        console.log(note_id);
+        const note = await getNebulaNote(note_id);
+        console.log(note);  
     }else if( action === "createNebulaNote" ){
 
         const file_list = await getNebulaLocalFiles(nebula_dir);
